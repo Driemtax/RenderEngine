@@ -2,6 +2,7 @@
 #include<cstring>
 #include<cmath>
 #include "models/int2vec.cpp"
+#include "helpers/math.h"
 
 const int WIDTH = 1280;
 const int HEIGHT = 720;
@@ -66,6 +67,23 @@ void draw_line(Uint32* buffer, int2vec pos1, int2vec pos2, Uint32 color) {
     }
 }
 
+void draw_triangle(Uint32* buffer, float2 a, float2 b, float2 c, Uint32 color) {
+    // iterate over every pixel and check if it is inside the triangle
+    for (int x = 0; x < WIDTH; x++)
+    {
+        for (int y = 0; y < HEIGHT; y++)
+        {
+            float2 currentPixel = float2{float(x),float(y)};
+            bool inTriangle = math::PointInTriangle(a,b,c,currentPixel);
+            if (inTriangle)
+            {
+                set_pixel(buffer, x, y, color);
+            }
+        }
+    }
+    
+}
+
 int main(int argc, char* argv[]) {
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -108,10 +126,16 @@ int main(int argc, char* argv[]) {
         memset(pixel_buffer, 0, WIDTH * HEIGHT * sizeof(Uint32));
 
         // Call draw functions here to draw a line or a triangle etc.
-        Uint32 white = color_from_rgb(255,255,255);
-        draw_line(pixel_buffer, {100,100}, {700,300}, white);
-        draw_line(pixel_buffer, {100, 200}, {700, 400}, color_from_rgb(255, 0, 0));
-        draw_line(pixel_buffer, {50, 50}, {50, 600}, color_from_rgb(0, 255, 0));
+        // Uint32 white = color_from_rgb(255,255,255);
+        // draw_line(pixel_buffer, {100,100}, {700,300}, white);
+        // draw_line(pixel_buffer, {100, 200}, {700, 400}, color_from_rgb(255, 0, 0));
+        // draw_line(pixel_buffer, {50, 50}, {50, 600}, color_from_rgb(0, 255, 0));
+
+        // Draw a green Triangle
+        float2 a = {WIDTH * 0.15f, HEIGHT * 0.85f}; // lower left point
+        float2 b = {WIDTH * 0.5f, HEIGHT * 0.15f}; // upper point;
+        float2 c = {WIDTH * 0.85f, HEIGHT * 0.15f}; // lower right point
+        draw_triangle(pixel_buffer, a, b , c, color_from_rgb(0, 240, 0));
 
         // 2. Update texture with new pixel values
         SDL_UpdateTexture(screen_texture, NULL, pixel_buffer, WIDTH * sizeof(Uint32));

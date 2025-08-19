@@ -3,9 +3,15 @@
 #include<cmath>
 #include "models/int2vec.cpp"
 #include "helpers/math.h"
+#include "models/mesh.cpp"
 
 const int WIDTH = 1280;
 const int HEIGHT = 720;
+
+struct m4x4 
+{
+    float m[4][4] = { 0 };
+};
 
 // auxilary funtion to set a pixel in the buffer
 void set_pixel(Uint32* buffer, int x, int y, Uint32 color) {
@@ -68,7 +74,7 @@ void draw_line(Uint32* buffer, int2vec pos1, int2vec pos2, Uint32 color) {
 }
 
 // Draws a triangle with given points a,b,c and color
-void draw_triangle(Uint32* buffer, float2 a, float2 b, float2 c, Uint32 color) {
+void fill_triangle(Uint32* buffer, float2 a, float2 b, float2 c, Uint32 color) {
     // iterate over every pixel and check if it is inside the triangle
     for (int x = 0; x < WIDTH; x++)
     {
@@ -85,6 +91,49 @@ void draw_triangle(Uint32* buffer, float2 a, float2 b, float2 c, Uint32 color) {
     
 }
 
+void draw_triangle (Uint32* buffer, triangle tri, Uint32 color) {
+    // draw a line from a -> b, b -> c, c -> a
+    int2vec a,b,c;
+    a = int2vec{int(tri.p[0].x), int(tri.p[0].y)};
+    b = int2vec{int(tri.p[1].x), int(tri.p[1].y)};
+    c = int2vec{int(tri.p[2].x), int(tri.p[2].y)};
+
+    draw_line(buffer, a, b, color);
+    draw_line(buffer, b, c, color);
+    draw_line(buffer, c, a, color);
+}
+
+mesh createCube() {
+    mesh meshCube = mesh();
+    meshCube.tris = {
+        // SOUTH
+        {{{0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}}},
+        {{{0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}},
+
+        // EAST
+        {{{1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}},
+        {{{1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f}}},
+        
+        // NORTH
+        {{{1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}}},
+        {{{1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}},
+        
+        // WEST
+        {{{0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}}},
+        {{{0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}},
+
+        // TOP
+        {{{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}},
+        {{{0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f}}},
+
+        // BOTTOM
+        {{{1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}}},
+        {{{1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}},
+    };
+
+    return meshCube;
+}
+
 // Test function to draw multiple triangles with different properties
 void test_triangle_rendering(Uint32* buffer) {
     // 1. Grid of small triangles (overlapping)
@@ -99,7 +148,7 @@ void test_triangle_rendering(Uint32* buffer) {
             Uint8 g = (j * 51) % 256;
             Uint8 bl = ((i + j) * 40) % 256;
             
-            draw_triangle(buffer, a, b, c, color_from_rgb(r, g, bl));
+            fill_triangle(buffer, a, b, c, color_from_rgb(r, g, bl));
         }
     }
     
@@ -110,57 +159,132 @@ void test_triangle_rendering(Uint32* buffer) {
     float2 rect_d = {600, 350};
     
     // First triangle (top-left, top-right, bottom-left)
-    draw_triangle(buffer, rect_a, rect_b, rect_c, color_from_rgb(255, 100, 100));
+    fill_triangle(buffer, rect_a, rect_b, rect_c, color_from_rgb(255, 100, 100));
     // Second triangle (top-right, bottom-right, bottom-left)
-    draw_triangle(buffer, rect_b, rect_d, rect_c, color_from_rgb(100, 100, 255));
+    fill_triangle(buffer, rect_b, rect_d, rect_c, color_from_rgb(100, 100, 255));
     
     // 3. Large overlapping triangles
     float2 big1_a = {200, 400};
     float2 big1_b = {800, 500};
     float2 big1_c = {300, 650};
-    draw_triangle(buffer, big1_a, big1_b, big1_c, color_from_rgb(255, 255, 0));
+    fill_triangle(buffer, big1_a, big1_b, big1_c, color_from_rgb(255, 255, 0));
     
     float2 big2_a = {400, 350};
     float2 big2_b = {900, 400};
     float2 big2_c = {500, 700};
-    draw_triangle(buffer, big2_a, big2_b, big2_c, color_from_rgb(0, 255, 255));
+    fill_triangle(buffer, big2_a, big2_b, big2_c, color_from_rgb(0, 255, 255));
     
     // 4. Triangles going off-screen (clipping test)
     // Top edge
     float2 clip1_a = {WIDTH * 0.3f, -50};
     float2 clip1_b = {WIDTH * 0.7f, -50};
     float2 clip1_c = {WIDTH * 0.5f, 100};
-    draw_triangle(buffer, clip1_a, clip1_b, clip1_c, color_from_rgb(255, 0, 255));
+    fill_triangle(buffer, clip1_a, clip1_b, clip1_c, color_from_rgb(255, 0, 255));
     
     // Right edge
     float2 clip2_a = {WIDTH - 50, HEIGHT * 0.3f};
     float2 clip2_b = {WIDTH + 100, HEIGHT * 0.5f};
     float2 clip2_c = {WIDTH - 50, HEIGHT * 0.7f};
-    draw_triangle(buffer, clip2_a, clip2_b, clip2_c, color_from_rgb(0, 255, 0));
+    fill_triangle(buffer, clip2_a, clip2_b, clip2_c, color_from_rgb(0, 255, 0));
     
     // Bottom edge
     float2 clip3_a = {WIDTH * 0.6f, HEIGHT - 50};
     float2 clip3_b = {WIDTH * 0.9f, HEIGHT + 100};
     float2 clip3_c = {WIDTH * 0.8f, HEIGHT - 100};
-    draw_triangle(buffer, clip3_a, clip3_b, clip3_c, color_from_rgb(255, 128, 0));
+    fill_triangle(buffer, clip3_a, clip3_b, clip3_c, color_from_rgb(255, 128, 0));
     
     // Left edge
     float2 clip4_a = {-100, HEIGHT * 0.6f};
     float2 clip4_b = {150, HEIGHT * 0.4f};
     float2 clip4_c = {50, HEIGHT * 0.8f};
-    draw_triangle(buffer, clip4_a, clip4_b, clip4_c, color_from_rgb(128, 0, 255));
+    fill_triangle(buffer, clip4_a, clip4_b, clip4_c, color_from_rgb(128, 0, 255));
     
     // 5. Very thin triangles (edge case testing)
     float2 thin1_a = {1000, 100};
     float2 thin1_b = {1200, 102};
     float2 thin1_c = {1100, 200};
-    draw_triangle(buffer, thin1_a, thin1_b, thin1_c, color_from_rgb(255, 255, 255));
+    fill_triangle(buffer, thin1_a, thin1_b, thin1_c, color_from_rgb(255, 255, 255));
     
     // 6. Degenerate case - very small triangle
     float2 tiny_a = {50, 50};
     float2 tiny_b = {52, 50};
     float2 tiny_c = {51, 52};
-    draw_triangle(buffer, tiny_a, tiny_b, tiny_c, color_from_rgb(255, 0, 0));
+    fill_triangle(buffer, tiny_a, tiny_b, tiny_c, color_from_rgb(255, 0, 0));
+}
+
+// Auxilery function to multiply a 4x4 matrix m with a 3d vector in and save the result in a 3d vector out
+void MultiplyMatrixVektor(float3 &in, float3 &out, m4x4 &m) {
+        out.x = in.x * m.m[0][0] + in.y * m.m[1][0] + in.z * m.m[2][0] + m.m[3][0];
+        out.y = in.x * m.m[0][1] + in.y * m.m[1][1] + in.z * m.m[2][1] + m.m[3][1];
+        out.z = in.x * m.m[0][2] + in.y * m.m[1][2] + in.z * m.m[2][2] + m.m[3][2];
+
+        float w = in.x * m.m[0][3] + in.y * m.m[1][3] + in.z * m.m[2][3] + m.m[3][3];
+        if (w != 0.0f)
+        {
+            out.x /= w; out.y /= w; out.z /= w;
+        }
+        
+    }
+
+void test_rotating_cube3D(Uint32* buffer, m4x4 projMat, mesh object, float fTheta) {
+    // Set up rotation matrices
+    m4x4 matRotZ, matRotX;
+
+    // Rotation on Z-axis
+    matRotZ.m[0][0] = cosf(fTheta);
+    matRotZ.m[0][1] = sinf(fTheta);
+    matRotZ.m[1][0] = -sinf(fTheta);
+    matRotZ.m[1][1] = cosf(fTheta);
+    matRotZ.m[2][2] = 1;
+    matRotZ.m[3][3] = 1;
+
+    // Rotation on X-axis
+    matRotX.m[0][0] = 1;
+    matRotX.m[1][1] = cosf(fTheta * 0.5f);
+    matRotX.m[1][2] = sinf(fTheta * 0.5f);
+    matRotX.m[2][1] = -sinf(fTheta * 0.5f);
+    matRotX.m[2][2] = cosf(fTheta * 0.5);
+    matRotX.m[3][3] = 1;
+
+    // Draw Triangles
+    for (auto tri : object.tris) {
+        triangle triProjected, triTranslated, triRotatedZ, triRotatedZX;
+
+        // Rotate in Z-Axis
+        MultiplyMatrixVektor(tri.p[0], triRotatedZ.p[0], matRotZ);
+        MultiplyMatrixVektor(tri.p[1], triRotatedZ.p[1], matRotZ);
+        MultiplyMatrixVektor(tri.p[2], triRotatedZ.p[2], matRotZ);
+
+        // Rotate in X-Axis
+        MultiplyMatrixVektor(triRotatedZ.p[0], triRotatedZX.p[0], matRotX);
+        MultiplyMatrixVektor(triRotatedZ.p[1], triRotatedZX.p[1], matRotX);
+        MultiplyMatrixVektor(triRotatedZ.p[2], triRotatedZX.p[2], matRotX);
+
+        // Offset into the screen
+        triTranslated = triRotatedZX;
+        triTranslated.p[0].z = triRotatedZX.p[0].z + 3.0f;
+        triTranslated.p[1].z = triRotatedZX.p[1].z + 3.0f;
+        triTranslated.p[2].z = triRotatedZX.p[2].z + 3.0f;
+
+        // Project triangles from 3D --> 2D
+        MultiplyMatrixVektor(triTranslated.p[0], triProjected.p[0], projMat);
+        MultiplyMatrixVektor(triTranslated.p[1], triProjected.p[1], projMat);
+        MultiplyMatrixVektor(triTranslated.p[2], triProjected.p[2], projMat);
+
+        // Scale into view
+        triProjected.p[0].x += 1.0f; triProjected.p[0].y += 1.0f;
+        triProjected.p[1].x += 1.0f; triProjected.p[1].y += 1.0f;
+        triProjected.p[2].x += 1.0f; triProjected.p[2].y += 1.0f; 
+        triProjected.p[0].x *= 0.5f * float(WIDTH);
+        triProjected.p[0].y *= 0.5f * float(HEIGHT);
+        triProjected.p[1].x *= 0.5f * float(WIDTH);
+        triProjected.p[1].y *= 0.5f * float(HEIGHT);
+        triProjected.p[2].x *= 0.5f * float(WIDTH);
+        triProjected.p[2].y *= 0.5f * float(HEIGHT);
+
+        // rasterize triangle (for now just draw a wireframe triangle)
+        draw_triangle(buffer, triProjected, color_from_rgb(255, 255, 255));
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -189,12 +313,40 @@ int main(int argc, char* argv[]) {
     // Array to store color value of every pixel on screen
     Uint32* pixel_buffer = new Uint32[WIDTH * HEIGHT];
 
+    // Projection Matrix
+    m4x4 matProj;
+
+    float fNear = 0.1f;
+    float fFar = 1000.0f;
+    float fFov = 90.0f;
+    float fAspectRatio = (float)HEIGHT / (float)WIDTH;
+    float fFovRad = 1.0f / tanf(fFov * 0.5f / 180.0f * 3.14159f);
+
+    matProj.m[0][0] = fAspectRatio * fFovRad;
+    matProj.m[1][1] = fFovRad;
+    matProj.m[2][2] = fFar / (fFar - fNear);
+    matProj.m[3][2] = (-fFar * fNear) / (fFar - fNear);
+    matProj.m[2][3] = 1.0f;
+    matProj.m[3][3] = 0.0f;
+
     // Main loop flag
     bool running = true;
     SDL_Event event;
 
+    // Timer 
+    Uint32 lastTime = SDL_GetTicks();
+    float fTheta = 0.0f;
+
+    mesh cube = createCube();
+
     // Event loop
     while (running) {
+        Uint32 currentTime = SDL_GetTicks();
+        float fElapsedTime = (currentTime - lastTime) / 1000.f;
+        lastTime = currentTime;
+
+        fTheta += 1.0f * fElapsedTime;
+        
         while (SDL_PollEvent(&event) != 0) {
             if (event.type == SDL_QUIT) {
                 running = false;
@@ -203,6 +355,8 @@ int main(int argc, char* argv[]) {
 
         // 1. empty pixel_buffer, set every value to 0 to get black background
         memset(pixel_buffer, 0, WIDTH * HEIGHT * sizeof(Uint32));
+
+
 
         // Call draw functions here to draw a line or a triangle etc.
         // Uint32 white = color_from_rgb(255,255,255);
@@ -217,7 +371,10 @@ int main(int argc, char* argv[]) {
         // draw_triangle(pixel_buffer, a, b , c, color_from_rgb(0, 240, 0));
 
         // Draw a lot of test triangles
-        test_triangle_rendering(pixel_buffer);
+        // test_triangle_rendering(pixel_buffer);
+
+        // Render 3D Cube
+        test_rotating_cube3D(pixel_buffer, matProj, cube, fTheta);
 
         // 2. Update texture with new pixel values
         SDL_UpdateTexture(screen_texture, NULL, pixel_buffer, WIDTH * sizeof(Uint32));

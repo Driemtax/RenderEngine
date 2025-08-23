@@ -4,3 +4,4 @@ struct triangle
 {
     float3 p[3];
 };
+

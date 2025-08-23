@@ -1,4 +1,5 @@
-#include <cmath>
+#ifndef FLOAT_3
+#define FLOAT_3
 
 struct float3 {
     float x, y, z;
@@ -9,3 +10,5 @@ struct float3 {
     float3(float value) : x(value), y(value), z(value) {}
        
 };
+
+#endif

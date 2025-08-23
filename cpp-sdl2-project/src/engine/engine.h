@@ -5,6 +5,7 @@
 #include "../models/mesh.cpp"
 #include "../models/int2vec.cpp"
 #include "../helpers/math.h"
+#include "../models/boundingBox.cpp"
 
 struct m4x4 {
     float m[4][4] = { 0 };
@@ -79,6 +80,41 @@ private:
             out.x /= w; out.y /= w; out.z /= w;
         }
         
+    }
+
+    BoundingBox calculate_bounding_box(const mesh& object) {
+        BoundingBox bbox;
+        bbox.min_z = 999999.0f;
+        bbox.max_z = -999999.0f;
+
+        for (const auto& tri : object.tris)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                if (tri.p[i].z < bbox.min_z) bbox.min_z = tri.p[i].z;
+                if (tri.p[i].z > bbox.max_z) bbox.max_z = tri.p[i].z;
+            }
+            
+        }
+
+        return bbox;
+        
+    }
+
+    BoundingBox calculate_triangle_bounds(const triangle& tri) {
+        BoundingBox bbox;
+        bbox.min_x = std::min(std::min(tri.p[0].x, tri.p[1].x), tri.p[2].x);
+        bbox.max_x = std::max(std::max(tri.p[0].x, tri.p[1].x), tri.p[2].x);
+        bbox.min_y = std::min(std::min(tri.p[0].y, tri.p[1].y), tri.p[2].y);
+        bbox.max_y = std::max(std::max(tri.p[0].y, tri.p[1].y), tri.p[2].y);
+
+        // clipping
+        bbox.min_x = std::max(bbox.min_x, 0.0f);
+        bbox.max_x = std::min(bbox.max_x, float(screen_width - 1));
+        bbox.min_y = std::max(bbox.min_y, 0.0f);
+        bbox.max_y = std::min(bbox.max_y, float(screen_height - 1));
+
+        return bbox;
     }
 
 public:
@@ -260,8 +296,8 @@ public:
             triProjected.p[2].y *= 0.5f * float(screen_height);
 
             // rasterize triangle (for now just draw a wireframe triangle)
-            draw_triangle(triProjected, color_from_rbg(255, 255, 255));
-            //fill_triangle(triProjected, color_from_rbg(255, 255, 255));
+            //draw_triangle(triProjected, color_from_rbg(255, 255, 255));
+            fill_triangle(triProjected, color_from_rbg(255, 255, 255));
         }
 
         present_frame();
@@ -332,16 +368,26 @@ public:
 
     // Draws a triangle with given points a,b,c and color
     void fill_triangle(const triangle& tri, Uint32 color) {
-        // iterate over every pixel and check if it is inside the triangle
-        for (int x = 0; x < screen_width; x++)
+        // calculate triangle bounds to not iterate over every single pixel per triangle
+        BoundingBox bbox = calculate_triangle_bounds(tri);
+        for (int x = int(bbox.min_x); x < int(bbox.max_x); x++)
         {
-            for (int y = 0; y < screen_height; y++)
+            for (int y = int(bbox.min_y); y < int(bbox.max_y); y++)
             {
-                float2 currentPixel = float2{float(x), float(y)};
-                float2 a,b,c;
-                a = float2{tri.p[0].x, tri.p[0].y};
-                b = float2{tri.p[1].x, tri.p[1].y};
-                c = float2{tri.p[2].x, tri.p[2].y};
+                float3 currentPixel = float3{float(x), float(y), 0.0f};
+                float3 a,b,c;
+                a = tri.p[0];
+                b = tri.p[1];
+                c = tri.p[2];
+
+                // check for nearest Z of triangle. If currentPixel already has lower z
+                // then we dont need to rasterize this triangle
+                float nearestZ = min(min(a.z, b.z), c.z);
+                if (currentPixel.z >= nearestZ)
+                {
+                    continue;
+                }
+                
                 bool inTriangle = math::PointInTriangle(a,b,c,currentPixel);
                 if (inTriangle)
                 {

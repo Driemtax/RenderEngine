@@ -1,6 +1,6 @@
 # RenderEngine
 
-A lightweight CPU-based 3D rendering engine built from scratch in C++ using only SDL2 for window management and pixel manipulation.
+A lightweight CPU-based 3D rendering engine built from scratch in C++ using only SDL2 for window management and pixel manipulation. This is based on the wonderful explanations of [OneLoneCoder](https://github.com/onelonecoder), make sure to check out his stuff on Youtube!
 
 ## 🚀 Current Features
 

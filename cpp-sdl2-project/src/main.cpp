@@ -1,4 +1,6 @@
 #include "engine/engine.h"
+#include "helpers/parser.h"
+#include "string"
 
 const int WIDTH = 1280;
 const int HEIGHT = 720;
@@ -140,7 +142,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Load/create objects
-    mesh cube = create_cube();
+    std::string path = "/home/driemtax/dev/RenderEngine/cpp-sdl2-project/assets/cube.obj";
+    mesh cube = parser::parse_wavefont_file(path);
 
     float rotation = 0.0f;
 

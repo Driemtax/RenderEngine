@@ -7,6 +7,6 @@ find_package(SDL2 REQUIRED)
 
 include_directories(${SDL2_INCLUDE_DIRS})
 
-add_executable(cpp-sdl2-project src/main.cpp src/helpers/math.cpp)
+add_executable(cpp-sdl2-project src/main.cpp src/helpers/math.cpp src/helpers/parser.cpp)
 
 target_link_libraries(cpp-sdl2-project ${SDL2_LIBRARIES})

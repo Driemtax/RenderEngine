@@ -240,6 +240,10 @@ public:
     void render_mesh(const mesh& object, float rotation_angle) {
         clear_screen();
 
+        // calculate dynamic offset based on object bounds
+        BoundingBox bbox = calculate_bounding_box(object);
+        float dynamic_offset = -bbox.min_z + 2.0f;
+
         // Set up rotation matrices
         m4x4 matRotZ, matRotX;
 
@@ -275,9 +279,9 @@ public:
 
             // Offset into the screen
             triTranslated = triRotatedZX;
-            triTranslated.p[0].z = triRotatedZX.p[0].z + 3.0f;
-            triTranslated.p[1].z = triRotatedZX.p[1].z + 3.0f;
-            triTranslated.p[2].z = triRotatedZX.p[2].z + 3.0f;
+            triTranslated.p[0].z = triRotatedZX.p[0].z + dynamic_offset;
+            triTranslated.p[1].z = triRotatedZX.p[1].z + dynamic_offset;
+            triTranslated.p[2].z = triRotatedZX.p[2].z + dynamic_offset;
 
             // Project triangles from 3D --> 2D
             MultiplyMatrixVektor(triTranslated.p[0], triProjected.p[0], projectionMatrix);

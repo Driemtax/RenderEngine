@@ -142,8 +142,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Load/create objects
-    std::string path = "/home/driemtax/dev/RenderEngine/cpp-sdl2-project/assets/monkey.obj";
-    mesh monkey = parser::parse_wavefont_file(path);
+    std::string path = "/home/driemtax/dev/RenderEngine/cpp-sdl2-project/assets/cube.obj";
+    mesh object = parser::parse_wavefont_file(path);
 
     float rotation = 0.0f;
 
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
         rotation += 1.0f * engine.get_elapsed_time();
 
         // Render scene
-        engine.render_mesh(monkey, rotation);
+        engine.render_mesh(object, rotation);
     }
 
     engine.shutdown();

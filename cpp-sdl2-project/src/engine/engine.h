@@ -19,11 +19,14 @@ private:
     SDL_Renderer* renderer;
     SDL_Texture* screen_texture;
     Uint32* pixel_buffer;
+    float* z_buffer;
 
     // Engine state
     int screen_width;
     int screen_height;
     bool is_running;
+    const float near_plane = 0.1f;
+    const float far_plane = 1000.0f;
 
     // 3D projection
     m4x4 projectionMatrix;
@@ -56,6 +59,7 @@ private:
     }
     void clear_screen() {
         memset(pixel_buffer, 0, screen_width * screen_height * sizeof(Uint32));
+        clear_z_buffer();
     };
     void present_frame() {
         SDL_UpdateTexture(screen_texture, NULL, pixel_buffer, screen_width * sizeof(Uint32));
@@ -115,6 +119,14 @@ private:
         bbox.max_y = std::min(bbox.max_y, float(screen_height - 1));
 
         return bbox;
+    }
+
+    void clear_z_buffer() {
+        for (int i = 0; i < screen_width * screen_height; i++)
+        {
+            z_buffer[i] = far_plane;
+        }
+        
     }
 
 public:
@@ -177,7 +189,12 @@ public:
             return false;
         }
 
-        setup_projection_matrix(90.0f, 0.1f, 1000.f);
+        z_buffer = new float[screen_width * screen_height];
+        
+        // initialize z-buffer with very far away
+        clear_z_buffer();
+
+        setup_projection_matrix(90.0f, near_plane, far_plane);
         last_time = SDL_GetTicks();
         is_running = true;
 
@@ -189,6 +206,13 @@ public:
             delete[] pixel_buffer;
             pixel_buffer = nullptr;
         }
+
+        if (z_buffer)
+        {
+            delete[] z_buffer;
+            z_buffer = nullptr;
+        }
+        
 
         if (screen_texture)
         {
@@ -374,29 +398,32 @@ public:
     void fill_triangle(const triangle& tri, Uint32 color) {
         // calculate triangle bounds to not iterate over every single pixel per triangle
         BoundingBox bbox = calculate_triangle_bounds(tri);
+        float3 a,b,c;
+        a = tri.p[0];
+        b = tri.p[1];
+        c = tri.p[2];
+        float nearestZ = min(min(a.z, b.z), c.z);
+
         for (int x = int(bbox.min_x); x < int(bbox.max_x); x++)
         {
             for (int y = int(bbox.min_y); y < int(bbox.max_y); y++)
             {
                 float3 currentPixel = float3{float(x), float(y), 0.0f};
-                float3 a,b,c;
-                a = tri.p[0];
-                b = tri.p[1];
-                c = tri.p[2];
 
+                bool inTriangle = math::PointInTriangle(a,b,c,currentPixel);
+                if (!inTriangle) continue;
+                
                 // check for nearest Z of triangle. If currentPixel already has lower z
                 // then we dont need to rasterize this triangle
-                float nearestZ = min(min(a.z, b.z), c.z);
-                if (currentPixel.z >= nearestZ)
+                // TODO: Use interpolation in future for more precision
+                int bufferIndex = y * screen_width + x;
+                if (nearestZ < z_buffer[bufferIndex])
                 {
-                    continue;
-                }
-                
-                bool inTriangle = math::PointInTriangle(a,b,c,currentPixel);
-                if (inTriangle)
-                {
+                    // set current z as lowest z on this pixel
+                    z_buffer[bufferIndex] = nearestZ;
                     set_pixel(x, y, color);
                 }
+
             }
         }
         

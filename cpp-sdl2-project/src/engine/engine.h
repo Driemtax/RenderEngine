@@ -404,9 +404,9 @@ public:
         c = tri.p[2];
         float nearestZ = min(min(a.z, b.z), c.z);
 
-        for (int x = int(bbox.min_x); x < int(bbox.max_x); x++)
+        for (int x = int(bbox.min_x); x <= int(bbox.max_x); x++)
         {
-            for (int y = int(bbox.min_y); y < int(bbox.max_y); y++)
+            for (int y = int(bbox.min_y); y <= int(bbox.max_y); y++)
             {
                 float3 currentPixel = float3{float(x), float(y), 0.0f};
 
